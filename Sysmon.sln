@@ -10,6 +10,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SysmonClient", "SysmonClient\SysmonClient.vcxproj", "{BF1CDDD3-4C86-479B-97EA-B63E846F6288}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|ARM = Debug|ARM
@@ -46,6 +48,18 @@ Global
 		{25F34A76-F66F-405F-B487-9D7A1DC2D735}.Release|x86.ActiveCfg = Release|Win32
 		{25F34A76-F66F-405F-B487-9D7A1DC2D735}.Release|x86.Build.0 = Release|Win32
 		{25F34A76-F66F-405F-B487-9D7A1DC2D735}.Release|x86.Deploy.0 = Release|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Debug|ARM.ActiveCfg = Debug|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Debug|ARM64.ActiveCfg = Debug|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Debug|x64.ActiveCfg = Debug|x64
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Debug|x64.Build.0 = Debug|x64
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Debug|x86.ActiveCfg = Debug|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Debug|x86.Build.0 = Debug|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Release|ARM.ActiveCfg = Release|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Release|ARM64.ActiveCfg = Release|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Release|x64.ActiveCfg = Release|x64
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Release|x64.Build.0 = Release|x64
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Release|x86.ActiveCfg = Release|Win32
+		{BF1CDDD3-4C86-479B-97EA-B63E846F6288}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
