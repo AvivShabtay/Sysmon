@@ -87,20 +87,22 @@ NTSTATUS SysmonCreateClose(PDEVICE_OBJECT, PIRP Irp) {
 */
 void SysmonUnload(PDRIVER_OBJECT DriverObject) {
 	UNREFERENCED_PARAMETER(DriverObject);
-	/*
-	PsRemoveLoadImageNotifyRoutine(OnImageLoadNotify);
-	PsRemoveCreateThreadNotifyRoutine(OnThreadNotify);
+
+	// Remove the callback to the notification:
 	PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, TRUE);
 
+	// Remove the symbolic link:
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\sysmon");
 	IoDeleteSymbolicLink(&symLink);
+
+	// Remove the device driver:
 	IoDeleteDevice(DriverObject->DeviceObject);
 
+	// Free allocated memory:
 	while (!IsListEmpty(&g_Globals.ItemsHead)) {
 		auto entry = RemoveHeadList(&g_Globals.ItemsHead);
 		ExFreePool(CONTAINING_RECORD(entry, FullItem<ItemHeader>, Entry));
 	}
-	*/
 }
 
 
