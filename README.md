@@ -37,10 +37,27 @@ TODO
 
 ---
 
+## Common issues
+#### Access Denied
+When creating the driver service and starting it you can get Access-Denied error.<br>
+This happing because the compiled driver didn't linked with with /integritycheck flag. <br>
+To solve this add the flag to your driver project as follows:<br>
+Project Properties -> Linker -> Command Line -> Additional Options -> type: <code>/integritycheck</code>
+
+#### VCRUNTIME missing
+When using the client application to read data from the Kernel-Driver you can get VCRUNTIMEXX.dll missing.<br>
+This happen because of the required DLLs for executable file.<br>
+To solve this change the compiler options as follows:<br>
+Project Properties -> C/C++ -> Code Generation -> Runtime Library -> <code>Multi-threaded DLL(/MD)</code>
+
+
+---
+
 ## ToDo
 - [ ] Add user-mode application to consume events
 - [ ] Create Service - start routine, stop routine
 - [ ] Create launch routine: load the driver, start consuming events, add events to log file
+- [ ] Read limit value for linked-list size from Driver's registry key
 ---
 
 ## Useful links
