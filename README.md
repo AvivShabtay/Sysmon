@@ -58,6 +58,7 @@ Project Properties -> C/C++ -> Code Generation -> Runtime Library -> <code>Multi
 - [ ] Create Service - start routine, stop routine
 - [ ] Create launch routine: load the driver, start consuming events, add events to log file
 - [ ] Read limit value for linked-list size from Driver's registry key
+- [ ] Add to PsSetCreateProcessNotifyRoutineEx ImageFileName and ParentProcessId data
 ---
 
 ## Useful links

@@ -65,6 +65,13 @@ void DisplayInfo(BYTE* buffer, DWORD size) {
 			printf("Process %d Created. Command line: %ws\n", info->ProcessId, commandLine.c_str());
 			break;
 		}
+		case ItemType::ProcessExit:
+		{
+			DisplayTime(header->Time);
+			ProcessExitInfo* info = (ProcessExitInfo*)buffer;
+			printf("Process %d Exited\n", info->ProcessId);
+			break;
+		}
 		default:
 			break;
 		}
