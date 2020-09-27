@@ -7,8 +7,9 @@
 DRIVER_UNLOAD SysmonUnload;
 DRIVER_DISPATCH SysmonCreateClose;
 DRIVER_DISPATCH SysmonRead;
-void OnProcessNotify(_Inout_ PEPROCESS Process, _In_ HANDLE ProcessId, _Inout_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo);
 void PushItem(LIST_ENTRY* entry);
+void OnProcessNotify(_Inout_ PEPROCESS Process, _In_ HANDLE ProcessId, _Inout_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo);
+void OnThreadNotify(_In_ HANDLE ProcessId, _In_ HANDLE ThreadId, _In_ BOOLEAN Create);
 
 Globals g_Globals;
 
@@ -24,6 +25,8 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 	PDEVICE_OBJECT DeviceObject = nullptr;
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\sysmon");
 	bool symLinkCreated = false;
+	bool processCallbackRegistered = false;
+	bool threadCallbackRegistered = false;
 
 	do {
 		// Create device object for user-mode communication:
@@ -49,9 +52,21 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 		// Register callback function for process creation:
 		status = PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, FALSE);
 		if (!NT_SUCCESS(status)) {
-			KdPrint((DRIVER_PREFIX "failed to create symbolic link (0x%08X)\n", status));
+			KdPrint((DRIVER_PREFIX "failed to register process callback (0x%08X)\n", status));
 			break;
 		}
+
+		processCallbackRegistered = true;
+
+		// Register callback function for thread creation and exit:
+		status = PsSetCreateThreadNotifyRoutine(OnThreadNotify);
+		if (!NT_SUCCESS(status)) {
+			KdPrint((DRIVER_PREFIX "failed to register thread callback (0x%08X)\n", status));
+			break;
+		}
+
+		threadCallbackRegistered = true;
+
 	} while (false);
 
 	// In case of failure:
@@ -60,6 +75,10 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 			IoDeleteSymbolicLink(&symLink);
 		if (DeviceObject)
 			IoDeleteDevice(DeviceObject);
+		if (processCallbackRegistered)
+			PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, TRUE);
+		if (threadCallbackRegistered)
+			PsRemoveCreateThreadNotifyRoutine(OnThreadNotify);
 	}
 
 	// Define driver prototypes:
@@ -90,6 +109,7 @@ void SysmonUnload(PDRIVER_OBJECT DriverObject) {
 
 	// Remove the callback to the notification:
 	PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, TRUE);
+	PsRemoveCreateThreadNotifyRoutine(OnThreadNotify);
 
 	// Remove the symbolic link:
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\sysmon");
@@ -164,7 +184,7 @@ NTSTATUS SysmonRead(PDEVICE_OBJECT, PIRP Irp) {
 
 
 /*
-* Callback function that will be fired whenever process creation will occur.
+* Callback function that will be fired whenever Process creation will occur.
 */
 void OnProcessNotify(_Inout_ PEPROCESS Process, _In_ HANDLE ProcessId, _Inout_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo) {
 	UNREFERENCED_PARAMETER(Process);
@@ -232,6 +252,34 @@ void OnProcessNotify(_Inout_ PEPROCESS Process, _In_ HANDLE ProcessId, _Inout_op
 		// Adding the notification to the linked-list:
 		PushItem(&info->Entry);
 	}
+}
+
+/*
+* Callback function that will be fired whenever Thread creation or exit will occur.
+*/
+void OnThreadNotify(_In_ HANDLE ProcessId, _In_ HANDLE ThreadId, _In_ BOOLEAN Create) {
+	auto size = sizeof(FullItem<ThreadCreateExitInfo>);
+	auto info = (FullItem<ThreadCreateExitInfo>*)ExAllocatePoolWithTag(PagedPool, size,
+		DRIVER_TAG);
+
+	if (info == nullptr) {
+		KdPrint((DRIVER_PREFIX "Failed to allocate memory\n"));
+		return;
+	}
+
+	auto& item = info->Data;
+
+	// Add generic data to the notification:
+	KeQuerySystemTimePrecise(&item.Time);
+	item.Size = sizeof(item);
+
+	// Add specific data for thread notification:
+	item.Type = Create ? ItemType::ThreadCreate : ItemType::ThreadExit;
+	item.ProcessId = HandleToUlong(ProcessId);
+	item.ThreadId = HandleToUlong(ThreadId);
+
+	// Add notification to the linked-list:
+	PushItem(&info->Entry);
 }
 
 /*
