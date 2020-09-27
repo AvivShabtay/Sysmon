@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "../Sysmon/SysMonCommon.h"
 #include <string>
+#include <Psapi.h>
 
 // Define prototypes:
 int Error(const char* text);
@@ -51,6 +52,21 @@ void DisplayTime(const LARGE_INTEGER& time) {
 }
 
 /*  */
+void DisplayProcessNameByPID(const ULONG pid) {
+	TCHAR procName[1024];
+	HANDLE hProc = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
+
+	if (hProc == INVALID_HANDLE_VALUE)
+		return;
+
+	if (::GetProcessImageFileName(hProc, procName, 1024)) {
+		printf("%ws ", procName);
+	}
+
+	CloseHandle(hProc);
+}
+
+/*  */
 void DisplayInfo(BYTE* buffer, DWORD size) {
 	DWORD count = size;
 
@@ -76,14 +92,18 @@ void DisplayInfo(BYTE* buffer, DWORD size) {
 		{
 			DisplayTime(header->Time);
 			ThreadCreateExitInfo* info = (ThreadCreateExitInfo*)buffer;
-			printf("Thread %d Created in process %d\n", info->ThreadId, info->ProcessId);
+			printf("Thread %d Created in process %d ", info->ThreadId, info->ProcessId);
+			DisplayProcessNameByPID(info->ProcessId);
+			printf("\n");
 			break;
 		}
 		case ItemType::ThreadExit:
 		{
 			DisplayTime(header->Time);
 			ThreadCreateExitInfo* info = (ThreadCreateExitInfo*)buffer;
-			printf("Thread %d Exited in process %d\n", info->ThreadId, info->ProcessId);
+			printf("Thread %d Exited in process %d ", info->ThreadId, info->ProcessId);
+			DisplayProcessNameByPID(info->ProcessId);
+			printf("\n");
 			break;
 		}
 		default:
