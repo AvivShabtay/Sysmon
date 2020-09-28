@@ -60,6 +60,7 @@ Project Properties -> C/C++ -> Code Generation -> Runtime Library -> <code>Multi
 - [ ] Read limit value for linked-list size from Driver's registry key
 - [ ] Add to PsSetCreateProcessNotifyRoutineEx ImageFileName and ParentProcessId data
 - [ ] Add caching to process and thread data
+- [ ] Change application-to-driver communication from pooling to better method.
 ---
 
 ## Useful links

@@ -38,20 +38,26 @@ int main() {
 	}
 }
 
-/*  */
+/*
+* Get error text, retrieve GetLastError value and prints it.
+*/
 int Error(const char* text) {
 	printf("%s (%d)\n", text, ::GetLastError());
 	return 1;
 }
 
-/*  */
+/*
+* Get LARGE_INTEGER representing time-stamp and prints it.
+*/
 void DisplayTime(const LARGE_INTEGER& time) {
 	SYSTEMTIME st;
 	::FileTimeToSystemTime((FILETIME*)&time, &st);
 	printf("%02d:%02d:%02d.%03d: ", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 }
 
-/*  */
+/*
+* Get PID, retrieve it's image file path and prints it.
+*/
 void DisplayProcessNameByPID(const ULONG pid) {
 	TCHAR procName[1024];
 	HANDLE hProc = ::OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pid);
@@ -66,7 +72,13 @@ void DisplayProcessNameByPID(const ULONG pid) {
 	CloseHandle(hProc);
 }
 
-/*  */
+/*
+* Accept buffer and size and parse the data to display notifications
+* coming from Sysmon driver.
+*	buffer	- contain the blob of data read from the Sysmon's device object.
+*	size	- the size of the buffer.
+* Each data in the buffer is of type ItemHeader.
+*/
 void DisplayInfo(BYTE* buffer, DWORD size) {
 	DWORD count = size;
 
