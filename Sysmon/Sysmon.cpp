@@ -103,7 +103,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 }
 
 /*
-*
+* The Driver's dispatch routine for create and close operations.
 */
 NTSTATUS SysmonCreateClose(PDEVICE_OBJECT, PIRP Irp) {
 	Irp->IoStatus.Status = STATUS_SUCCESS;
@@ -114,7 +114,8 @@ NTSTATUS SysmonCreateClose(PDEVICE_OBJECT, PIRP Irp) {
 
 
 /*
-*
+* The Driver's unload function called whenever the kernel unloads
+* the driver.
 */
 void SysmonUnload(PDRIVER_OBJECT DriverObject) {
 	UNREFERENCED_PARAMETER(DriverObject);
@@ -140,7 +141,7 @@ void SysmonUnload(PDRIVER_OBJECT DriverObject) {
 
 
 /*
-*
+* The Driver's dispatch routine for read operations.
 */
 NTSTATUS SysmonRead(PDEVICE_OBJECT, PIRP Irp) {
 	auto stack = IoGetCurrentIrpStackLocation(Irp);
@@ -295,7 +296,9 @@ void OnThreadNotify(_In_ HANDLE ProcessId, _In_ HANDLE ThreadId, _In_ BOOLEAN Cr
 	PushItem(&info->Entry);
 }
 
-/*  */
+/*
+* Callback function that will be fired whenever Image load will occur.
+*/
 void OnImageLoadNotify(_Inout_ PUNICODE_STRING FullImageName, _In_ HANDLE ProcessId, _In_ PIMAGE_INFO ImageInfo) {
 
 	// Check if the notification is for system images:
