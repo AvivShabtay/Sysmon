@@ -10,7 +10,7 @@ DRIVER_DISPATCH SysmonRead;
 void PushItem(LIST_ENTRY* entry);
 void OnProcessNotify(_Inout_ PEPROCESS Process, _In_ HANDLE ProcessId, _Inout_opt_ PPS_CREATE_NOTIFY_INFO CreateInfo);
 void OnThreadNotify(_In_ HANDLE ProcessId, _In_ HANDLE ThreadId, _In_ BOOLEAN Create);
-
+void OnImageLoadNotify(_Inout_ PUNICODE_STRING FullImageName, _In_ HANDLE ProcessId, _In_ PIMAGE_INFO ImageInfo);
 Globals g_Globals;
 
 extern "C"
@@ -27,6 +27,7 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 	bool symLinkCreated = false;
 	bool processCallbackRegistered = false;
 	bool threadCallbackRegistered = false;
+	bool imageLoadCallbackRegistered = false;
 
 	do {
 		// Create device object for user-mode communication:
@@ -67,6 +68,15 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 
 		threadCallbackRegistered = true;
 
+		// Register callback function for image load:
+		status = PsSetLoadImageNotifyRoutine(OnImageLoadNotify);
+		if (!NT_SUCCESS(status)) {
+			KdPrint((DRIVER_PREFIX "failed to register image load callback (0x%08X)\n", status));
+			break;
+		}
+
+		imageLoadCallbackRegistered = true;
+
 	} while (false);
 
 	// In case of failure:
@@ -79,6 +89,8 @@ NTSTATUS DriverEntry(PDRIVER_OBJECT DriverObject, PUNICODE_STRING) {
 			PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, TRUE);
 		if (threadCallbackRegistered)
 			PsRemoveCreateThreadNotifyRoutine(OnThreadNotify);
+		if (imageLoadCallbackRegistered)
+			PsRemoveLoadImageNotifyRoutine(OnImageLoadNotify);
 	}
 
 	// Define driver prototypes:
@@ -110,6 +122,7 @@ void SysmonUnload(PDRIVER_OBJECT DriverObject) {
 	// Remove the callback to the notification:
 	PsSetCreateProcessNotifyRoutineEx(OnProcessNotify, TRUE);
 	PsRemoveCreateThreadNotifyRoutine(OnThreadNotify);
+	PsRemoveLoadImageNotifyRoutine(OnImageLoadNotify);
 
 	// Remove the symbolic link:
 	UNICODE_STRING symLink = RTL_CONSTANT_STRING(L"\\??\\sysmon");
@@ -279,6 +292,55 @@ void OnThreadNotify(_In_ HANDLE ProcessId, _In_ HANDLE ThreadId, _In_ BOOLEAN Cr
 	item.ThreadId = HandleToUlong(ThreadId);
 
 	// Add notification to the linked-list:
+	PushItem(&info->Entry);
+}
+
+/*  */
+void OnImageLoadNotify(_Inout_ PUNICODE_STRING FullImageName, _In_ HANDLE ProcessId, _In_ PIMAGE_INFO ImageInfo) {
+
+	// Check if the notification is for system images:
+	if (ProcessId == nullptr)
+		return;
+
+	// Calculating the allocation size:
+	USHORT allocSize = sizeof(FullItem<ImageLoadInfo>);
+	USHORT imagePathLength = 0;
+	if (FullImageName) {
+		imagePathLength = FullImageName->Length;
+		allocSize += imagePathLength;
+	}
+
+	// Allocating memory + memory for the image path:
+	auto info = (FullItem<ImageLoadInfo>*)ExAllocatePoolWithTag(PagedPool, allocSize,
+		DRIVER_TAG);
+
+	if (info == nullptr) {
+		KdPrint((DRIVER_PREFIX "Failed to allocate memory\n"));
+		return;
+	}
+
+	// Adding data to the notification:
+	auto& item = info->Data;
+	KeQuerySystemTimePrecise(&item.Time);
+	item.Type = ItemType::ImageLoad;
+
+	item.Size = sizeof(item) + imagePathLength;
+	item.ProcessId = HandleToULong(ProcessId);
+	item.ImageBage = ImageInfo->ImageBase;
+	item.ImageSize = ImageInfo->ImageSize;
+
+	// Coping the image path to the continuous memory allocation,
+	// after the ImageLoadInfo structure:
+	if (imagePathLength > 0) {
+		::memcpy((UCHAR*)&item + sizeof(item), FullImageName->Buffer, imagePathLength);
+		item.ImagePathLength = imagePathLength / sizeof(WCHAR); // length in WCHARs
+		item.ImagePathOffset = sizeof(item);
+	}
+	else {
+		item.ImagePathLength = 0;
+	}
+
+	// Adding the notification to the linked-list:
 	PushItem(&info->Entry);
 }
 

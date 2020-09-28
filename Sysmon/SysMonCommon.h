@@ -5,7 +5,8 @@ enum class ItemType : short {
 	ProcessCreate,
 	ProcessExit,
 	ThreadCreate,
-	ThreadExit
+	ThreadExit,
+	ImageLoad
 };
 
 struct ItemHeader {
@@ -28,6 +29,14 @@ struct ProcessCreateInfo : ItemHeader {
 struct ThreadCreateExitInfo : ItemHeader {
 	ULONG ThreadId;
 	ULONG ProcessId;
+};
+
+struct ImageLoadInfo : ItemHeader {
+	ULONG ProcessId;
+	PVOID ImageBage;
+	ULONG_PTR ImageSize;
+	USHORT ImagePathLength;
+	USHORT ImagePathOffset;
 };
 
 

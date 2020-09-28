@@ -106,6 +106,14 @@ void DisplayInfo(BYTE* buffer, DWORD size) {
 			printf("\n");
 			break;
 		}
+		case ItemType::ImageLoad:
+		{
+			DisplayTime(header->Time);
+			ImageLoadInfo* info = (ImageLoadInfo*)buffer;
+			std::wstring imagePath((WCHAR*)(buffer + info->ImagePathOffset), info->ImagePathLength);
+			printf("Image loaded into process %d at address 0x%p (%ws)\n", info->ProcessId, info->ImageBage, imagePath.c_str());
+			break;
+		}
 		default:
 			break;
 		}
